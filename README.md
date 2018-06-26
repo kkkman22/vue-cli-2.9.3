@@ -1,12 +1,15 @@
 # 分析`vue-cli@2.9.3` 搭建的`webpack`项目工程
-### 前言
->已经有很多分析`Vue-cli`搭建工程的文章，为什么自己还要写一遍呢。学习就好比是座大山，人们沿着不同的路登山，分享着自己看到的风景。你不一定能看到别人看到的风景，体会到别人的心情。只有自己去登山，才能看到不一样的风景，体会才更加深刻。
 
-**项目放在笔者的`github`上，[分析vue-cli@2.9.3 搭建的webpack项目工程](https://github.com/lxchuan12/analyse-vue-cli)。方便大家克隆下载，或者在线查看。同时也求个`star` `^_^`，也是对笔者的一种鼓励和支持。**
+### 前言
+
+> 已经有很多分析`Vue-cli`搭建工程的文章，为什么自己还要写一遍呢。学习就好比是座大山，人们沿着不同的路登山，分享着自己看到的风景。你不一定能看到别人看到的风景，体会到别人的心情。只有自己去登山，才能看到不一样的风景，体会才更加深刻。
+
+\*\*项目放在笔者的`github`上，[分析 vue-cli@2.9.3 搭建的 webpack 项目工程]。
 
 正文从这里开始～
 
 ### 使用`vue-cli`初始化`webpack`工程
+
 ```
 // # 安装
 npm install -g vue-cli
@@ -26,12 +29,15 @@ vue init <template-name> <project-name>
 // # 例子
 vue init webpack analyse-vue-cli
 ```
-更多`vue-cli`如何工作的可以查看这篇文章[vue-cli是如何工作的](https://juejin.im/post/5a7b1b86f265da4e8f049081)，或者分析Vue-cli源码查看这篇[走进Vue-cli源码，自己动手搭建前端脚手架工具](https://segmentfault.com/a/1190000013975247)，再或者直接查看[vue-cli github仓库源码](https://github.com/vuejs/vue-cli/tree/master)
 
-如果对`webpack`还不是很了解，可以查看[webpack官方文档中的概念](https://webpack.docschina.org/concepts/)，虽然是最新版本的，但概念都是差不多的。
+更多`vue-cli`如何工作的可以查看这篇文章[vue-cli 是如何工作的](https://juejin.im/post/5a7b1b86f265da4e8f049081)，或者分析 Vue-cli 源码查看这篇[走进 Vue-cli 源码，自己动手搭建前端脚手架工具](https://segmentfault.com/a/1190000013975247)，再或者直接查看[vue-cli github 仓库源码](https://github.com/vuejs/vue-cli/tree/master)
+
+如果对`webpack`还不是很了解，可以查看[webpack 官方文档中的概念](https://webpack.docschina.org/concepts/)，虽然是最新版本的，但概念都是差不多的。
 
 ### `package.json`
+
 分析一个项目，一般从`package.json`的命令入口`scripts`开始。
+
 ```
 "scripts": {
   // dev webpack-dev-server --inline 模式 --progress 显示进度 --config 指定配置文件（默认是webpack.config.js）
@@ -49,6 +55,7 @@ vue init webpack analyse-vue-cli
   "build": "node build/build.js"
 },
 ```
+
 `Npm Script` 底层实现原理是通过调用 `Shell` 去运行脚本命令。`npm run start`等同于运行`npm run dev`。
 
 `Npm Script` 还有一个重要的功能是能运行安装到项目目录里的 `node_modules` 里的可执行模块。
@@ -56,18 +63,22 @@ vue init webpack analyse-vue-cli
 例如在通过命令`npm i -D webpack-dev-server`将`webpack-dev-server`安装到项目后，是无法直接在项目根目录下通过命令 `webpack-dev-server` 去执行 `webpack-dev-server` 构建的，而是要通过命令 `./node_modules/.bin/webpack-dev-server` 去执行。
 
 `Npm Script` 能方便的解决这个问题，只需要在 `scripts` 字段里定义一个任务，例如：
+
 ```
 "dev": "webpack-dev-server --inline --progress --config build/webpack.dev.conf.js"
 ```
-`Npm Script` 会先去项目目录下的 `node_modules` 中寻找有没有可执行的 `webpack-dev-server` 文件，如果有就使用本地的，如果没有就使用全局的。 所以现在执行 `webpack-dev-server` 启动服务时只需要通过执行 `npm run dev` 去实现。
-> 再来看下 npm run dev
- `webpack-dev-server` 其实是一个`node.js`的应用程序，它是通过`JavaScript`开发的。在命令行执行`npm run dev`命令等同于执行`node ./node_modules/webpack-dev-server/bin/webpack-dev-server.js --inline --progress --config build/webpack.dev.conf.js`。你可以试试。
 
-更多`package.json`的配置项，可以查看[阮一峰老师的文章 package.json文件](http://javascript.ruanyifeng.com/nodejs/packagejson.html)
+`Npm Script` 会先去项目目录下的 `node_modules` 中寻找有没有可执行的 `webpack-dev-server` 文件，如果有就使用本地的，如果没有就使用全局的。 所以现在执行 `webpack-dev-server` 启动服务时只需要通过执行 `npm run dev` 去实现。
+
+> 再来看下 npm run dev
+> `webpack-dev-server` 其实是一个`node.js`的应用程序，它是通过`JavaScript`开发的。在命令行执行`npm run dev`命令等同于执行`node ./node_modules/webpack-dev-server/bin/webpack-dev-server.js --inline --progress --config build/webpack.dev.conf.js`。你可以试试。
+
+更多`package.json`的配置项，可以查看[阮一峰老师的文章 package.json 文件](http://javascript.ruanyifeng.com/nodejs/packagejson.html)
 
 `npm run dev`指定了`build/webpack.dev.conf.js`配置去启动服务，那么我们来看下这个文件做了什么。
 
 ### `build/webpack.dev.conf.js` `webpack`开发环境配置
+
 这个文件主要做了以下几件事情：<br>
 1、引入各种依赖，同时也引入了`config`文件夹下的变量和配置，和一个工具函数`build/utils.js`，<br>
 2、合并`build/webpack.base.conf.js`配置文件，<br>
@@ -414,7 +425,6 @@ exports.createNotifierCallback = () => {
     })
   }
 }
-
 ```
 
 ### `build/webpack.base.conf.js` `webpack`基本配置文件
@@ -567,6 +577,7 @@ module.exports = {
 主要有：`loaders`，`cssSourceMap`，`cacheBusting`，`transformToRequire`。
 
 具体看该文件注释：
+
 ```
 'use strict'
 const utils = require('./utils')
@@ -600,7 +611,6 @@ module.exports = {
     image: 'xlink:href'
   }
 }
-
 ```
 
 看完了这些文件相应配置，开发环境的相关配置就串起来了。其中`config/`文件夹下的配置，笔者都已经注释在`build/`文件夹下的对应的文件中，所以就不单独说明了。
@@ -672,7 +682,6 @@ rm(path.join(config.build.assetsRoot, config.build.assetsSubDirectory), err => {
     ))
   })
 })
-
 ```
 
 ### `build/check-versions` 检查`node`和`npm`版本
@@ -744,7 +753,6 @@ module.exports = function () {
     process.exit(1)
   }
 }
-
 ```
 
 ### `build/webpack.prod.conf.js` `webpack`生产环境配置
@@ -992,26 +1000,29 @@ if (config.build.bundleAnalyzerReport) {
 
 // 最终导出 webpackConfig
 module.exports = webpackConfig
-
 ```
+
 至此，我们就分析完了`package.json`中的`npm run dev`和`npm run build`两个命令。测试相关的类似就略过吧。
 
-`npm run lint`，`.eslintrc.js`中的配置不多，更多可以查看[eslint英文文档](https://eslint.org/)或[`eslint`中文官网](http://eslint.cn/)，所以也略过吧。不过提一下，把`eslint`整合到`git`工作流。可以安装`husky`，`npm i husky -S`。安装后，配置`package.json`的`scripts`中，配置`precommit`，具体如下：
+`npm run lint`，`.eslintrc.js`中的配置不多，更多可以查看[eslint 英文文档](https://eslint.org/)或[`eslint`中文官网](http://eslint.cn/)，所以也略过吧。不过提一下，把`eslint`整合到`git`工作流。可以安装`husky`，`npm i husky -S`。安装后，配置`package.json`的`scripts`中，配置`precommit`，具体如下：
+
 ```
 "scripts": {
   "lint": "eslint --ext .js,.vue src test/unit test/e2e/specs",
   "precommit": "npm run lint",
 },
 ```
-配置好后，每次`git commit -m`提交会检查代码是否通过`eslint`校验，如果没有校验通过则提交失败。还可以配置`prepush`。`husky`不断在更新，现在可能与原先的配置不太相同了，具体查看[husky github仓库](https://github.com/typicode/husky)。原理就是`git-hooks`,`pre-commit`的钩子。对`shell`脚本熟悉的同学也可以自己写一份`pre-commit`。复制到项目的`.git/hooks/pre-commit`中。不需要依赖`husky`包。我司就是用的`shell`脚本。
 
+配置好后，每次`git commit -m`提交会检查代码是否通过`eslint`校验，如果没有校验通过则提交失败。还可以配置`prepush`。`husky`不断在更新，现在可能与原先的配置不太相同了，具体查看[husky github 仓库](https://github.com/typicode/husky)。原理就是`git-hooks`,`pre-commit`的钩子。对`shell`脚本熟悉的同学也可以自己写一份`pre-commit`。复制到项目的`.git/hooks/pre-commit`中。不需要依赖`husky`包。我司就是用的`shell`脚本。
 
 最后提一下`.babelrc`文件中的配置。
 
 ### `.babelrc` `babel`相关配置
+
 配置了一些转码规则。这里附上两个链接：[`babel`英文官网](https://babeljs.io/)和[`babel`的中文官网](https://babel.bootcss.com/)。
 
 具体看文件中的配置注释：
+
 ```
 {
   // presets指明转码的规则
@@ -1039,34 +1050,37 @@ module.exports = webpackConfig
 }
 ```
 
-文件中`presets`中有配置`env`和`stage-2`，可能不知道是什么。这里引用[深入浅出webpack](http://webpack.wuhaolin.cn/3%E5%AE%9E%E6%88%98/3-1%E4%BD%BF%E7%94%A8ES6%E8%AF%AD%E8%A8%80.html)书中，第三章，`3-1`使用`ES6`语言 小节的一段，解释一下。<br>
->`presets` 属性告诉 `Babel` 要转换的源码使用了哪些新的语法特性，一个 Presets 对一组新语法特性提供支持，多个 `Presets` 可以叠加。 `Presets` 其实是一组 `Plugins` 的集合，每一个 `Plugin` 完成一个新语法的转换工作。`Presets` 是按照 `ECMAScript` 草案来组织的，通常可以分为以下三大类（书中就是说三大类，我发现就两点~~~）：<br>
->1、已经被写入 ECMAScript 标准里的特性，由于之前每年都有新特性被加入到标准里，所以又可细分为：<br>
-es2015 包含在2015里加入的新特性；<br>
-es2016 包含在2016里加入的新特性；<br>
-es2017 包含在2017里加入的新特性；<br>
-es2017 包含在2017里加入的新特性；<br>
-env 包含当前所有 ECMAScript 标准里的最新特性。<br>
->2、被社区提出来的但还未被写入 `ECMAScript` 标准里特性，这其中又分为以下四种：<br>
-`stage0` 只是一个美好激进的想法，有 `Babel` 插件实现了对这些特性的支持，但是不确定是否会被定为标准；<br>
-`stage1` 值得被纳入标准的特性；<br>
-`stage2` 该特性规范已经被起草，将会被纳入标准里；<br>
-`stage3` 该特性规范已经定稿，各大浏览器厂商和 `` 社区开始着手实现；<br>
-`stage4` 在接下来的一年将会加入到标准里去。<br>
+文件中`presets`中有配置`env`和`stage-2`，可能不知道是什么。这里引用[深入浅出 webpack](http://webpack.wuhaolin.cn/3%E5%AE%9E%E6%88%98/3-1%E4%BD%BF%E7%94%A8ES6%E8%AF%AD%E8%A8%80.html)书中，第三章，`3-1`使用`ES6`语言 小节的一段，解释一下。<br>
+
+> `presets` 属性告诉 `Babel` 要转换的源码使用了哪些新的语法特性，一个 Presets 对一组新语法特性提供支持，多个 `Presets` 可以叠加。 `Presets` 其实是一组 `Plugins` 的集合，每一个 `Plugin` 完成一个新语法的转换工作。`Presets` 是按照 `ECMAScript` 草案来组织的，通常可以分为以下三大类（书中就是说三大类，我发现就两点~~~）：<br>
+> 1、已经被写入 ECMAScript 标准里的特性，由于之前每年都有新特性被加入到标准里，所以又可细分为：<br>
+> es2015 包含在 2015 里加入的新特性；<br>
+> es2016 包含在 2016 里加入的新特性；<br>
+> es2017 包含在 2017 里加入的新特性；<br>
+> es2017 包含在 2017 里加入的新特性；<br>
+> env 包含当前所有 ECMAScript 标准里的最新特性。<br>
+> 2、被社区提出来的但还未被写入 `ECMAScript` 标准里特性，这其中又分为以下四种：<br>
+> `stage0` 只是一个美好激进的想法，有 `Babel` 插件实现了对这些特性的支持，但是不确定是否会被定为标准；<br>
+> `stage1` 值得被纳入标准的特性；<br>
+> `stage2` 该特性规范已经被起草，将会被纳入标准里；<br>
+> `stage3` 该特性规范已经定稿，各大浏览器厂商和 `` 社区开始着手实现；<br>
+> `stage4` 在接下来的一年将会加入到标准里去。<br>
 
 至此，就算相对完整的分析完了`Vue-cli`(版本`v2.9.3`)搭建的`webpack`项目工程。希望对大家有所帮助。<br>
-**项目放在笔者的`github`上，[分析vue-cli@2.9.3 搭建的webpack项目工程](https://github.com/lxchuan12/analyse-vue-cli)。方便大家克隆下载，或者在线查看。同时也求个`star` `^_^`，也是对笔者的一种鼓励和支持。**<br>
+**项目放在笔者的`github`上，[分析 vue-cli@2.9.3 搭建的 webpack 项目工程](https://github.com/lxchuan12/analyse-vue-cli)。方便大家克隆下载，或者在线查看。同时也求个`star` `^_^`，也是对笔者的一种鼓励和支持。**<br>
 笔者知识能力有限，文章有什么不妥之处，欢迎指出~
 
 ### 关于
-作者：常以**轩辕Rowboat**为名混迹于江湖。前端路上 | PPT爱好者 | 所知甚少，唯善学<br>
+
+作者：常以**轩辕 Rowboat**为名混迹于江湖。前端路上 | PPT 爱好者 | 所知甚少，唯善学<br>
 [个人博客](https://lxchuan12.github.io/)<br>
-[segmentfault个人主页](https://segmentfault.com/u/lxchuan12)<br>
+[segmentfault 个人主页](https://segmentfault.com/u/lxchuan12)<br>
 [掘金个人主页](https://juejin.im/user/57974dc55bbb500063f522fd/posts)<br>
 [知乎](https://www.zhihu.com/people/lxchuan12/activities)<br>
 [github](https://github.com/lxchuan12)<br>
 
 ### 小结
+
 1、分析这些，逐行注释，还是需要一些时间的。其中有些不是很明白的地方，及时查阅相应的官方文档和插件文档（建议看英文文档和最新的文档），不过文档没写明白的地方，可以多搜索一些别人的博客文章，相对比较清晰明了。<br>
-2、前端发展太快，这个`Vue-cli@2.9.3` `webpack`版本还是`v3.x`，webpack现在官方版本已经是`v4.12.0`，相信不久后，`Vue-cli`也将发布支持`webpack v4.x`的版本，`v3.0.0`已经是`beta.16`了。<br>
+2、前端发展太快，这个`Vue-cli@2.9.3` `webpack`版本还是`v3.x`，webpack 现在官方版本已经是`v4.12.0`，相信不久后，`Vue-cli`也将发布支持`webpack v4.x`的版本，`v3.0.0`已经是`beta.16`了。<br>
 3、后续有余力，可能会继续分析新版的`vue-cli`构建的`webpack`项目工程。
